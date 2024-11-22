@@ -85,7 +85,9 @@ def main(opt):
         num_rows = int(height / cell_height)
 
     # Get the dimensions of the characters
-    char_width, char_height = font.getsize(sample_character)
+    x0, y0, x1, y1 = font.getbbox(sample_character)
+    char_width = x1 - x0
+    char_height = y1 - y0
 
     # Calculate the output image dimensions
     out_width = char_width * num_cols

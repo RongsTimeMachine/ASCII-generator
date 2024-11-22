@@ -16,15 +16,25 @@ def sort_chars(char_list, font, language):
     """
     # Determine character dimensions based on language
     if language == "chinese":
-        char_width, char_height = font.getsize("制")
+        x0, y0, x1, y1 = font.getbbox("制")
+        char_width = x1 - x0
+        char_height = y1 - y0
     elif language == "korean":
-        char_width, char_height = font.getsize("ㅊ")
+        x0, y0, x1, y1 = font.getbbox("ㅊ")
+        char_width = x1 - x0
+        char_height = y1 - y0
     elif language == "japanese":
-        char_width, char_height = font.getsize("あ")
+        x0, y0, x1, y1 = font.getbbox("あ")
+        char_width = x1 - x0
+        char_height = y1 - y0
     elif language in ["english", "german", "french", "spanish", "italian", "portuguese", "polish"]:
-        char_width, char_height = font.getsize("A")
+        x0, y0, x1, y1 = font.getbbox("A")
+        char_width = x1 - x0
+        char_height = y1 - y0
     elif language == "russian":
-        char_width, char_height = font.getsize("A")
+        x0, y0, x1, y1 = font.getbbox("A")
+        char_width = x1 - x0
+        char_height = y1 - y0
 
     # Limit the number of characters to sort
     num_chars = min(len(char_list), 100)
