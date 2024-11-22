@@ -33,8 +33,7 @@ def get_args():
     # Mode option for character selection
     parser.add_argument("--mode", type=str, default="standard", help="Mode for character selection")
     # Background color option
-    parser.add_argument("--background", type=str, default="black", choices=["black", "white"],
-                        help="background's color")
+    parser.add_argument("--background", type=str, default="black", choices=["black", "white"], help="background's color")
     # Number of columns for output's width
     parser.add_argument("--num_cols", type=int, default=300, help="number of character for output's width")
     # Upsize output
@@ -55,11 +54,12 @@ def main(opt):
         bg_code = (255, 255, 255)
     else:
         bg_code = (0, 0, 0)
-
+    
     # Retrieve character list, font, sample character, and scale based on language and mode
     char_list, font, sample_character, scale = get_data(opt.language, opt.mode)
     num_chars = len(char_list)
     num_cols = opt.num_cols
+    
     # Read and convert the input image to RGB
     image = cv2.imread(opt.input, cv2.IMREAD_COLOR)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -69,7 +69,6 @@ def main(opt):
     cell_width = width / opt.num_cols
     cell_height = scale * cell_width
     num_rows = int(height / cell_height)
-
     # Adjust dimensions if too many columns or rows
     if num_cols > width or num_rows > height:
         print("Too many columns or rows. Use default setting")
