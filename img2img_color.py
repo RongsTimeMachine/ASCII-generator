@@ -26,8 +26,12 @@ def get_args():
     parser = argparse.ArgumentParser(description="Image to ASCII with color")
     # Input image path argument
     parser.add_argument("--input", type=str, default="data/input.jpg", help="Path to input image")
+    if not parser.parse_args().input:
+        raise ValueError("Input image path is required.")
     # Output text file path argument
     parser.add_argument("--output", type=str, default="data/output.jpg", help="Path to output text file")
+    if not parser.parse_args().output:
+        raise ValueError("Output text file path is required.")
     # Language option for character retrieval
     parser.add_argument("--language", type=str, default="english", help="Language for character retrieval")
     # Mode option for character selection
@@ -36,8 +40,12 @@ def get_args():
     parser.add_argument("--background", type=str, default="black", choices=["black", "white"], help="background's color")
     # Number of columns for output's width
     parser.add_argument("--num_cols", type=int, default=300, help="number of character for output's width")
+    if parser.parse_args().num_cols <= 0:
+        raise ValueError("Number of columns must be greater than 0.")
     # Upsize output
     parser.add_argument("--scale", type=int, default=2, help="upsize output")
+    if parser.parse_args().scale <= 0:
+        raise ValueError("Upsize output must be greater than 0.")
     args = parser.parse_args()
     return args
 
@@ -50,35 +58,45 @@ def main(opt):
         opt: Command line arguments with options for input, output, language, mode, background, num_cols, and scale.
     """
     # Set background color
-    if opt.background == "white":
-        bg_code = (255, 255, 255)
-    else:
-        bg_code = (0, 0, 0)
+    bg_code = (255, 255, 255) if opt.background == "white" else (0, 0, 0)
     
     # Retrieve character list, font, sample character, and scale based on language and mode
-    char_list, font, sample_character, scale = get_data(opt.language, opt.mode)
+    try:
+        char_list, font, sample_character, scale = get_data(opt.language, opt.mode)
+    except Exception as e:
+        raise ValueError(f"Error retrieving data: {e}")
+    
     num_chars = len(char_list)
     num_cols = opt.num_cols
-    
-    # Read and convert the input image to RGB
+
+    # Read the input image
     image = cv2.imread(opt.input, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f"Could not open or find the image '{opt.input}'")
+    
+    # Convert the image to RGB
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     height, width, _ = image.shape
 
     # Calculate dimensions for ASCII cells
-    cell_width = width / opt.num_cols
+    cell_width = width / num_cols
     cell_height = scale * cell_width
     num_rows = int(height / cell_height)
+
     # Adjust dimensions if too many columns or rows
     if num_cols > width or num_rows > height:
-        print("Too many columns or rows. Use default setting")
+        print("Too many columns or rows. Using default setting")
         cell_width = 6
         cell_height = 12
         num_cols = int(width / cell_width)
         num_rows = int(height / cell_height)
 
     # Calculate output image dimensions
-    x0, y0, x1, y1 = font.getbbox(sample_character)
+    try:
+        x0, y0, x1, y1 = font.getbbox(sample_character)
+    except Exception as e:
+        raise ValueError(f"Error getting character bounding box: {e}")
+
     char_width = x1 - x0
     char_height = y1 - y0
     out_width = char_width * num_cols
@@ -110,10 +128,15 @@ def main(opt):
         cropped_image = ImageOps.invert(out_image).getbbox()
     else:
         cropped_image = out_image.getbbox()
-    out_image = out_image.crop(cropped_image)
+    
+    if cropped_image:
+        out_image = out_image.crop(cropped_image)
 
     # Save the output image
-    out_image.save(opt.output)
+    try:
+        out_image.save(opt.output)
+    except Exception as e:
+        raise IOError(f"Error saving the output image: {e}")
 
 
 if __name__ == '__main__':
