@@ -7,20 +7,20 @@ import cv2
 import numpy as np
 
 
-def get_args():
-    """
-    Gets command line arguments for the image to ASCII conversion.
+def get_args() -> argparse.Namespace:
+    """Gets command line arguments for the image to ASCII conversion.
 
     Returns:
         argparse.Namespace: The parsed command line arguments.
     """
-    parser = argparse.ArgumentParser("Image to ASCII")
-    parser.add_argument("--input", type=str, default="data/input.jpg", help="Path to input image")
-    parser.add_argument("--output", type=str, default="data/output.txt", help="Path to output text file")
-    parser.add_argument("--mode", type=str, default="complex", choices=["simple", "complex"], help="10 or 70 different characters")
-    parser.add_argument("--num_cols", type=int, default=150, help="number of character for output's width")
-    args = parser.parse_args()
-    return args
+    parser = argparse.ArgumentParser(description="Image to ASCII")
+    parser.add_argument("--input", type=str, default="data/input.jpg", help="path to input image")
+    parser.add_argument("--output", type=str, default="data/output.txt", help="path to output text file")
+    parser.add_argument("--mode", type=str, default="complex", choices=["simple", "complex"], help="mode for character selection")
+    parser.add_argument("--num_cols", type=int, default=150, help="number of characters for output's width")
+    return parser.parse_args()
+
+
 
 
 def main(opt):
@@ -30,53 +30,46 @@ def main(opt):
     Args:
         opt: Command line arguments with options for input, output, mode, and num_cols.
     """
-    # Define character list based on mode
-    if opt.mode == "simple":
-        CHAR_LIST = '@%#*+=-:. '
-    else:
-        CHAR_LIST = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
-    
-    num_chars = len(CHAR_LIST)
+    char_list = get_char_list(opt.mode)
+    num_chars = len(char_list)
     num_cols = opt.num_cols
 
-    # Read and convert the input image to grayscale
-    image = cv2.imread(opt.input)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image = cv2.imread(opt.input, cv2.IMREAD_GRAYSCALE)
     height, width = image.shape
 
-    # Calculate dimensions for ASCII cells
-    cell_width = width / opt.num_cols
+    cell_width = width / num_cols
     cell_height = 2 * cell_width
     num_rows = int(height / cell_height)
 
-    # Adjust dimensions if too many columns or rows
     if num_cols > width or num_rows > height:
-        print("Too many columns or rows. Use default setting")
         cell_width = 6
         cell_height = 12
         num_cols = int(width / cell_width)
         num_rows = int(height / cell_height)
 
-    # Open the output file for writing
-    output_file = open(opt.output, 'w')
+    with open(opt.output, 'w') as output_file:
+        for i in range(0, height, int(cell_height)):
+            for j in range(0, width, int(cell_width)):
+                avg_brightness = np.mean(image[i:i + int(cell_height), j:j + int(cell_width)])
+                char_index = min(int(avg_brightness * num_chars / 255), num_chars - 1)
+                output_file.write(char_list[char_index])
+            output_file.write("\n")
 
-    # Process each cell in the image to determine the best matching ASCII character
-    for i in range(num_rows):
-        for j in range(num_cols):
-            # Extract the part of the image corresponding to the current cell
-            partial_image = image[int(i * cell_height):min(int((i + 1) * cell_height), height),
-                                  int(j * cell_width):min(int((j + 1) * cell_width), width)]
-            # Calculate the average brightness of the cell
-            avg_brightness = np.mean(partial_image)
-            # Determine the character index based on brightness
-            char_index = min(int(avg_brightness * num_chars / 255), num_chars - 1)
-            # Write the corresponding character to the output file
-            output_file.write(CHAR_LIST[char_index])
-        # Write a newline after each row
-        output_file.write("\n")
 
-    # Close the output file
-    output_file.close()
+def get_char_list(mode: str) -> str:
+    """Returns a character list based on the specified mode.
+
+    Args:
+        mode (str): The mode for character selection.
+
+    Returns:
+        str: The character list.
+    """
+    if mode == "simple":
+        chars = '@%#*+=-:. '
+    else:
+        chars = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+    return chars
 
 
 if __name__ == '__main__':
